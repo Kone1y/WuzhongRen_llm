@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#101318">
+<title>雾中人 · LLM 文字冒险引擎</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- 氛围粒子层（最底层，不挡交互） -->
+<canvas id="fxCanvas"></canvas>
+
+<!-- ============ 开始流程：标题页 ============ -->
+<div id="titleScreen" class="screen start">
+  <div class="title-hero">
+    <div class="logo">
+      <div class="logo-mark">❖</div>
+      <h1>雾中人</h1>
+      <p class="subtitle">LLM 文字冒险引擎 · AI 即地下城主</p>
+    </div>
+    <button id="btnTitle" class="btn primary large">开始游戏</button>
+    <div id="resumeBanner" class="resume-banner hidden">
+      <span class="resume-text">继续上次旅程</span>
+      <span class="resume-arrow">›</span>
+    </div>
+    <div class="title-links">
+      <button id="btnCollection" class="btn ghost">结局图鉴</button>
+      <button id="btnForge" class="btn ghost">世界工坊</button>
+      <button id="btnSettings" class="btn ghost">接口设置</button>
+    </div>
+    <p class="footer-hint">八个世界 · 无限剧情 · 你的每个选择都算数</p>
+  </div>
+</div>
+
+<!-- ============ 开始流程：选择世界 ============ -->
+<div id="pickScreen" class="screen start hidden">
+  <div class="start-inner">
+    <div class="pick-head">
+      <button id="btnPickBack" class="btn ghost back-btn">‹ 返回</button>
+      <h2 class="pick-title">选择你的世界</h2>
+    </div>
+    <div id="worldList" class="world-list">
+      <div class="loading-hint">正在加载世界列表……</div>
+    </div>
+    <p class="footer-hint">每个世界都有独立的谜题、NPC 与多结局</p>
+  </div>
+</div>
+
+<!-- ============ 开始流程：世界详情 ============ -->
+<div id="detailScreen" class="screen start hidden">
+  <div class="start-inner">
+    <div class="pick-head">
+      <button id="btnDetailBack" class="btn ghost back-btn">‹ 换一个</button>
+      <h2 class="pick-title" id="detailName">世界</h2>
+    </div>
+    <div id="detailBody" class="detail-body">
+      <div class="loading-hint">读取世界设定中……</div>
+    </div>
+    <div class="detail-actions">
+      <button id="btnGoName" class="btn primary large">进入此界</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 开始流程：取名启程 ============ -->
+<div id="nameScreen" class="screen start hidden">
+  <div class="start-inner">
+    <div class="pick-head">
+      <button id="btnNameBack" class="btn ghost back-btn">‹ 返回</button>
+      <h2 class="pick-title">留下你的名字</h2>
+    </div>
+    <div class="setup-card">
+      <label class="field-label">你的出身 <span class="range-val" id="originHint">选择出身将影响属性与际遇</span></label>
+      <div id="originList" class="origin-list"><div class="loading-hint">进入世界详情后可选择出身</div></div>
+
+      <label class="field-label">难度</label>
+      <div class="diff-seg" id="diffSeg">
+        <div class="diff-btn" data-d="0"><span class="d-name">故事</span><span class="d-desc">不会死·DC-2·温情向</span></div>
+        <div class="diff-btn selected" data-d="1"><span class="d-name">标准</span><span class="d-desc">正常死亡·平衡</span></div>
+        <div class="diff-btn" data-d="2"><span class="d-name">硬核</span><span class="d-desc">DC+2·死亡即终</span></div>
+      </div>
+
+      <label class="field-label">你的名字</label>
+      <input id="playerName" type="text" maxlength="12" placeholder="史册要有落笔处">
+
+      <label class="field-label">叙事风格 <span id="styleVal" class="range-val">均衡</span></label>
+      <input id="styleRange" type="range" min="0" max="2" value="1" step="1"
+             list="styleTicks">
+      <datalist id="styleTicks">
+        <option value="0" label="简练"></option>
+        <option value="1" label="均衡"></option>
+        <option value="2" label="沉浸"></option>
+      </datalist>
+
+      <div class="start-actions">
+        <button id="btnQuickLoad" class="btn ghost medium">读取存档</button>
+        <button id="btnStart" class="btn primary medium">启 程</button>
+      </div>
+      <div id="startError" class="error-hint"></div>
+    </div>
+    <p class="footer-hint" id="nameWorldHint"></p>
+  </div>
+</div>
+
+<!-- ============ 游戏界面 ============ -->
+<div id="gameScreen" class="screen hidden">
+  <!-- 顶栏 -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <span id="worldBadge" class="world-badge">世界</span>
+      <span id="turnBadge" class="turn-badge">第 1 幕</span>
+    </div>
+    <div class="topbar-title" id="locationText">……</div>
+    <div class="topbar-right">
+      <button id="btnRecall" class="btn recall-btn" title="回顾前情">前情</button>
+      <button id="btnSide" class="btn icon mobile-only" title="状态面板">☰</button>
+      <button id="btnSound" class="btn icon" title="音效开关">🔊</button>
+      <button id="btnImage" class="btn icon" title="为当前场景生成一幅插图">🖼 插图</button>
+      <button id="btnSave" class="btn icon" title="保存进度">💾</button>
+      <button id="btnLoad" class="btn icon" title="读取存档">📂</button>
+      <button id="btnMenu" class="btn icon" title="离开这个世界">⏻</button>
+    </div>
+  </header>
+
+  <div class="game-body">
+    <!-- 主叙事区 -->
+    <main class="story-pane">
+      <div id="storyLog" class="story-log"></div>
+
+      <!-- 输入区 -->
+      <div class="input-dock">
+        <div id="suggestions" class="suggestions"></div>
+        <div class="input-row">
+          <textarea id="playerInput" rows="1" placeholder="你想做什么？（Enter 发送，Shift+Enter 换行）"></textarea>
+          <button id="btnRetry" class="btn icon retry-btn" title="重新推演这一幕">↺</button>
+          <button id="btnSend" class="btn primary send-btn">行动</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- 侧栏 -->
+    <aside class="side-pane">
+      <div class="panel character-panel">
+        <h3 id="charName">旅人</h3>
+        <div class="stat-bars">
+          <div class="stat-row" data-tip="生命">
+            <span class="stat-icon">❤</span>
+            <div class="bar"><div id="barHp" class="bar-fill hp"></div></div>
+            <span id="numHp" class="stat-num">100</span>
+          </div>
+          <div class="stat-row" data-tip="理智">
+            <span class="stat-icon">☯</span>
+            <div class="bar"><div id="barSanity" class="bar-fill sanity"></div></div>
+            <span id="numSanity" class="stat-num">100</span>
+          </div>
+        </div>
+        <div class="coin-row"><span>✦ 银两</span><span id="numGold">10</span></div>
+      </div>
+
+      <div class="panel">
+        <h3>行囊</h3>
+        <ul id="inventoryList" class="chip-list inv-list"><li class="empty">空空如也</li></ul>
+      </div>
+
+      <div class="panel" id="companionPanel" style="display:none">
+        <h3>同行者</h3>
+        <ul id="companionList" class="rel-list"></ul>
+      </div>
+
+      <div class="panel" id="cluePanel" style="display:none">
+        <h3>线索墙 <span id="clueCount" class="range-val"></span></h3>
+        <ul id="clueList" class="clue-list"></ul>
+      </div>
+
+      <div class="panel">
+        <h3>牵挂 · 关系</h3>
+        <ul id="relList" class="rel-list"><li class="empty">萍水相逢者尚无</li></ul>
+      </div>
+
+      <div class="panel">
+        <h3>当前所图</h3>
+        <ul id="objList" class="obj-list"><li class="empty">尚未定计</li></ul>
+      </div>
+
+      <div class="panel gm-panel">
+        <h3>🜛 幕后一瞥 <button id="btnGmToggle" class="mini-btn">显示</button></h3>
+        <p id="gmNote" class="gm-note hidden">……</p>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div id="sideMask" class="side-mask hidden"></div>
+
+<!-- ============ 结局画面 ============ -->
+<div id="endingScreen" class="overlay hidden">
+  <div class="ending-card">
+    <p class="ending-kicker" id="endingType">终章</p>
+    <h2 id="endingTitle">未名之终</h2>
+    <div id="endingText" class="ending-text"></div>
+    <div class="ending-stats" id="endingStats"></div>
+    <div id="endingChronicle" class="ending-chronicle hidden"></div>
+    <div class="ending-actions">
+      <button id="btnEndingRestart" class="btn primary medium">再启新程</button>
+      <button id="btnEndingReview" class="btn ghost medium">回看旅程</button>
+      <button id="btnEndingExport" class="btn ghost medium">导出旅程</button>
+      <button id="btnEndingCard" class="btn ghost medium">分享卡</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 世界工坊 ============ -->
+<div id="forgeScreen" class="screen start hidden">
+  <div class="start-inner">
+    <div class="pick-head">
+      <button id="btnForgeBack" class="btn ghost back-btn">‹ 返回</button>
+      <h2 class="pick-title">世界工坊</h2>
+    </div>
+    <div class="setup-card">
+      <label class="field-label">一句话创意</label>
+      <textarea id="forgeIdea" rows="3" maxlength="200" placeholder="例：敦煌壁画修复师发现壁画夜里会自己改动"></textarea>
+      <div class="start-actions">
+        <span class="range-val" id="forgeHint">AI 将生成完整世界剧本（约 1~2 分钟）</span>
+        <button id="btnForgeGo" class="btn primary medium">铸造世界</button>
+      </div>
+      <div id="forgeResult" class="error-hint"></div>
+      <div id="forgeList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 接口设置 ============ -->
+<div id="settingsScreen" class="screen start hidden">
+  <div class="start-inner">
+    <div class="pick-head">
+      <button id="btnSettingsBack" class="btn ghost back-btn">‹ 返回</button>
+      <h2 class="pick-title">接口设置</h2>
+    </div>
+    <div class="setup-card">
+      <label class="field-label">API 地址（OpenAI 兼容）</label>
+      <input id="cfgBaseUrl" type="text" placeholder="https://api.deepseek.com/v1" autocapitalize="off" autocorrect="off">
+
+      <label class="field-label">API Key</label>
+      <input id="cfgApiKey" type="password" placeholder="sk-..." autocapitalize="off" autocorrect="off">
+
+      <label class="field-label">模型名</label>
+      <input id="cfgModel" type="text" placeholder="deepseek-chat" autocapitalize="off" autocorrect="off">
+      <div class="cfg-presets">
+        <button class="mini-btn preset-btn" data-base="https://api.deepseek.com/v1" data-model="deepseek-chat">DeepSeek</button>
+        <button class="mini-btn preset-btn" data-base="https://api.deepseek.com/v1" data-model="deepseek-v4-pro">DeepSeek v4</button>
+        <button class="mini-btn preset-btn" data-base="https://api.siliconflow.cn/v1" data-model="deepseek-ai/DeepSeek-V3">硅基流动</button>
+      </div>
+
+      <div class="start-actions" style="margin-top:22px">
+        <button id="btnTestKey" class="btn ghost medium">测试连接</button>
+        <button id="btnSaveCfg" class="btn primary medium">保存配置</button>
+      </div>
+      <div id="cfgStatus" class="error-hint"></div>
+
+      <label class="field-label" style="margin-top:20px">正文字号 <span id="fsVal" class="range-val">标准</span></label>
+      <input id="fsRange" type="range" min="0" max="2" value="1" step="1">
+      <div class="cfg-note">配置只保存在本机。分享 APK 给朋友时，各自填各自的 Key 即可游玩。</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 通用弹窗 ============ -->
+<div id="modalMask" class="overlay hidden">
+  <div class="modal-card" id="modalCard">
+    <div class="modal-head">
+      <h3 id="modalTitle">存档</h3>
+      <button id="modalClose" class="btn icon">✕</button>
+    </div>
+    <div id="modalBody" class="modal-body"></div>
+  </div>
+</div>
+
+<!-- ============ Toast ============ -->
+<div id="toast" class="toast hidden"></div>
+
+<script src="config.js"></script>
+<script src="worlds.js"></script>
+<script src="game.js"></script>
+</body>
+</html>

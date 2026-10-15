@@ -1,0 +1,11 @@
+{
+  "appId": "com.mist.wanderer",
+  "appName": "雾中人",
+  "webDir": "app",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}

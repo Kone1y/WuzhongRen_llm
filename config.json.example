@@ -1,0 +1,8 @@
+{
+  "baseUrl": "https://api.deepseek.com/v1",
+  "apiKey": "sk-在这里填你的key",
+  "model": "deepseek-chat",
+  "imageBaseUrl": "",
+  "imageApiKey": "",
+  "imageModel": ""
+}
